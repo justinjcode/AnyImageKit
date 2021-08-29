@@ -13,6 +13,7 @@ public protocol ImageEditorControllerDelegate: AnyObject {
     
     func imageEditorDidCancel(_ editor: ImageEditorController)
     func imageEditor(_ editor: ImageEditorController, didFinishEditing result: EditorResult)
+    func imageEditor(_ editor: ImageEditorController, share image: UIImage)
 }
 
 extension ImageEditorControllerDelegate {
@@ -181,6 +182,10 @@ extension ImageEditorController: PhotoEditorControllerDelegate {
         case .failure(let error):
             _print(error.localizedDescription)
         }
+    }
+    
+    func photoEditor(_ editor: PhotoEditorController, share photo: UIImage, isEdited: Bool) {
+        editorDelegate?.imageEditor(self, share: photo)
     }
 }
 

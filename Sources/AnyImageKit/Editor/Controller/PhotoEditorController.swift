@@ -12,6 +12,7 @@ protocol PhotoEditorControllerDelegate: AnyObject {
     
     func photoEditorDidCancel(_ editor: PhotoEditorController)
     func photoEditor(_ editor: PhotoEditorController, didFinishEditing photo: UIImage, isEdited: Bool)
+    func photoEditor(_ editor: PhotoEditorController, share photo: UIImage, isEdited: Bool)
 }
 
 final class PhotoEditorController: AnyImageViewController {
@@ -42,6 +43,16 @@ final class PhotoEditorController: AnyImageViewController {
         view.accessibilityLabel = BundleHelper.localizedString(key: "BACK", module: .core)
         return view
     }()
+    
+    private(set) lazy var shareButton: UIButton = {
+        let view = UIButton(type: .custom)
+        view.backgroundColor = .clear
+        view.setImage(BundleHelper.image(named: "Share", module: .editor), for: .normal)
+        view.contentEdgeInsets = UIEdgeInsets(top: 5, left: 5, bottom: 5, right: 5)
+        view.addTarget(self, action: #selector(shareButtonTapped), for: .touchUpInside)
+        return view
+    }()
+    
     
     private var image: UIImage = UIImage()
     private let resource: EditorPhotoResource
@@ -105,6 +116,7 @@ final class PhotoEditorController: AnyImageViewController {
         view.addSubview(contentView)
         view.addSubview(toolView)
         view.addSubview(backButton)
+        view.addSubview(shareButton)
         view.addSubview(placeholdImageView)
         
         contentView.snp.makeConstraints { (maker) in
@@ -121,6 +133,16 @@ final class PhotoEditorController: AnyImageViewController {
                 maker.top.equalToSuperview().offset(30)
             }
             maker.left.equalToSuperview().offset(10)
+            maker.width.height.equalTo(50)
+        }
+        shareButton.snp.makeConstraints { maker in
+            if #available(iOS 11.0, *) {
+                let topOffset = ScreenHelper.statusBarFrame.height <= 20 ? 20 : 10
+                maker.top.equalTo(view.safeAreaLayoutGuide).offset(topOffset)
+            } else {
+                maker.top.equalToSuperview().offset(30)
+            }
+            maker.right.equalToSuperview().inset(10)
             maker.width.height.equalTo(50)
         }
         placeholdImageView.snp.makeConstraints { maker in
@@ -182,6 +204,10 @@ extension PhotoEditorController {
     /// 返回按钮
     @objc private func backButtonTapped(_ sender: UIButton) {
         context.action(.back)
+    }
+    
+    @objc private func shareButtonTapped() {
+        context.action(.share)
     }
 }
 
@@ -385,6 +411,8 @@ extension PhotoEditorController {
             if !data.text.isEmpty {
                 stack.addTextData(data)
             }
+        case .share:
+            delegate?.photoEditor(self, share: image, isEdited: stack.edit.isEdited)
         }
     }
     
