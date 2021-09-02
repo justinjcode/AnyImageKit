@@ -16,7 +16,11 @@ extension PhotoEditorContentView {
         guard mosaic == nil else { completion(false); return }
         DispatchQueue.global().async { [weak self] in
             guard let self = self else { completion(false); return }
-            guard let mosaicImage = self.createMosaicImage() else { completion(false); return }
+            guard let mosaicImage = self.createMosaicImage() else {
+                DispatchQueue.main.async {
+                    completion(false);
+                }
+                 return }
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { completion(false); return }
                 _print("Mosaic created")

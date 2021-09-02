@@ -38,4 +38,5 @@ enum PhotoEditorAction {
     case textDone(TextData)
     
     case share
+    case download
 }

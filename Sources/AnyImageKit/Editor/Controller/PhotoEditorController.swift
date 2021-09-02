@@ -13,9 +13,12 @@ protocol PhotoEditorControllerDelegate: AnyObject {
     func photoEditorDidCancel(_ editor: PhotoEditorController)
     func photoEditor(_ editor: PhotoEditorController, didFinishEditing photo: UIImage, isEdited: Bool)
     func photoEditor(_ editor: PhotoEditorController, share photo: UIImage, isEdited: Bool)
+    func photoEditor(_ editor: PhotoEditorController, save photo: UIImage, isEdited: Bool)
 }
 
 final class PhotoEditorController: AnyImageViewController {
+    
+    private var didSetupView: Bool = false
     
     private lazy var contentView: PhotoEditorContentView = {
         let view = PhotoEditorContentView(frame: self.view.bounds, image: image, context: context)
@@ -53,6 +56,14 @@ final class PhotoEditorController: AnyImageViewController {
         return view
     }()
     
+    private(set) lazy var downloadButton: UIButton = {
+        let view = UIButton(type: .custom)
+        view.backgroundColor = .clear
+        view.setImage(BundleHelper.image(named: "Download", module: .editor), for: .normal)
+        view.contentEdgeInsets = UIEdgeInsets(top: 5, left: 5, bottom: 5, right: 5)
+        view.addTarget(self, action: #selector(downloadButtonTapped), for: .touchUpInside)
+        return view
+    }()
     
     private var image: UIImage = UIImage()
     private let resource: EditorPhotoResource
@@ -117,6 +128,7 @@ final class PhotoEditorController: AnyImageViewController {
         view.addSubview(toolView)
         view.addSubview(backButton)
         view.addSubview(shareButton)
+        view.addSubview(downloadButton)
         view.addSubview(placeholdImageView)
         
         contentView.snp.makeConstraints { (maker) in
@@ -135,7 +147,7 @@ final class PhotoEditorController: AnyImageViewController {
             maker.left.equalToSuperview().offset(10)
             maker.width.height.equalTo(50)
         }
-        shareButton.snp.makeConstraints { maker in
+        downloadButton.snp.makeConstraints { maker in
             if #available(iOS 11.0, *) {
                 let topOffset = ScreenHelper.statusBarFrame.height <= 20 ? 20 : 10
                 maker.top.equalTo(view.safeAreaLayoutGuide).offset(topOffset)
@@ -145,6 +157,16 @@ final class PhotoEditorController: AnyImageViewController {
             maker.right.equalToSuperview().inset(10)
             maker.width.height.equalTo(50)
         }
+        shareButton.snp.makeConstraints { maker in
+            if #available(iOS 11.0, *) {
+                let topOffset = ScreenHelper.statusBarFrame.height <= 20 ? 20 : 10
+                maker.top.equalTo(view.safeAreaLayoutGuide).offset(topOffset)
+            } else {
+                maker.top.equalToSuperview().offset(30)
+            }
+            maker.right.equalTo(self.downloadButton.snp.left).offset(-16)
+            maker.width.height.equalTo(50)
+        }
         placeholdImageView.snp.makeConstraints { maker in
             maker.edges.equalToSuperview()
         }
@@ -152,6 +174,7 @@ final class PhotoEditorController: AnyImageViewController {
         if let data = stack.edit.outputImageData, let image = UIImage(data: data) {
             setPlaceholdImage(image)
         }
+        didSetupView = true
     }
     
     private func setupMosaicView() {
@@ -209,6 +232,10 @@ extension PhotoEditorController {
     @objc private func shareButtonTapped() {
         context.action(.share)
     }
+    
+    @objc private func downloadButtonTapped() {
+        context.action(.download)
+    }
 }
 
 // MARK: - Private
@@ -240,6 +267,9 @@ extension PhotoEditorController {
     }
     
     private func showHUDIfNeeded() {
+        guard didSetupView else {
+            return
+        }
         if contentView.mosaic == nil {
             showWaitHUD()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
@@ -254,6 +284,7 @@ extension PhotoEditorController {
         UIView.animate(withDuration: animated ? 0.25 : 0) {
             self.toolView.alpha = hidden ? 0 : 1
             self.backButton.alpha = hidden ? 0 : 1
+            self.shareButton.alpha = hidden ? 0 : 1
         }
     }
 }
@@ -413,6 +444,8 @@ extension PhotoEditorController {
             }
         case .share:
             delegate?.photoEditor(self, share: image, isEdited: stack.edit.isEdited)
+        case .download:
+            delegate?.photoEditor(self, save: image, isEdited: stack.edit.isEdited)
         }
     }
     
