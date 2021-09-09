@@ -285,6 +285,7 @@ extension PhotoEditorController {
             self.toolView.alpha = hidden ? 0 : 1
             self.backButton.alpha = hidden ? 0 : 1
             self.shareButton.alpha = hidden ? 0 : 1
+            self.downloadButton.alpha = hidden ? 0 : 1
         }
     }
 }
@@ -295,6 +296,8 @@ extension PhotoEditorController {
     /// 准备开始裁剪
     private func willBeginCrop() {
         backButton.isHidden = true
+        shareButton.isHidden = true
+        downloadButton.isHidden = true
         contentView.scrollView.isScrollEnabled = true
         contentView.cropLayerLeave.isHidden = true
         contentView.deactivateAllTextView()
@@ -335,6 +338,8 @@ extension PhotoEditorController {
     /// 准备开始输入文本
     private func willBeginInput() {
         backButton.isHidden = true
+        shareButton.isHidden = true
+        downloadButton.isHidden = true
         toolView.topCoverView.isHidden = true
         toolView.bottomCoverView.isHidden = true
         toolView.doneButton.isHidden = true
@@ -346,6 +351,8 @@ extension PhotoEditorController {
     /// 已经结束输入文本
     private func didEndInputing() {
         backButton.isHidden = false
+        shareButton.isHidden = false
+        downloadButton.isHidden = false
         toolView.topCoverView.isHidden = false
         toolView.bottomCoverView.isHidden = false
         toolView.doneButton.isHidden = false
@@ -408,11 +415,15 @@ extension PhotoEditorController {
                 return
             }
             backButton.isHidden = false
+            shareButton.isHidden = false
+            downloadButton.isHidden = false
             contentView.cropCancel { [weak self] (_) in
                 self?.didEndCroping()
             }
         case .cropDone:
             backButton.isHidden = false
+            shareButton.isHidden = false
+            downloadButton.isHidden = false
             contentView.cropDone { [weak self] (_) in
                 guard let self = self else { return }
                 self.didEndCroping()
