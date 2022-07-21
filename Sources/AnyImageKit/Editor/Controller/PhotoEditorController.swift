@@ -111,6 +111,7 @@ final class PhotoEditorController: AnyImageViewController {
                 self.image = image
                 self.setupView()
                 self.setupMosaicView()
+                self.hideHUD()
             case .failure(let error):
                 if error == .cannotFindInLocal {
                     self.showWaitHUD()
