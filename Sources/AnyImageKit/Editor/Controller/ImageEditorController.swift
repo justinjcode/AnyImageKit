@@ -30,14 +30,17 @@ open class ImageEditorController: AnyImageNavigationController {
     
     private var containerSize: CGSize = .zero
     
+    public var onlyPush: Bool = false
+    
     public required init() {
         super.init(nibName: nil, bundle: nil)
         self.modalPresentationStyle = .fullScreen
     }
     
     /// Init Photo Editor
-    public convenience init(photo resource: EditorPhotoResource, options: EditorPhotoOptionsInfo, delegate: ImageEditorControllerDelegate) {
+    public convenience init(photo resource: EditorPhotoResource, options: EditorPhotoOptionsInfo, delegate: ImageEditorControllerDelegate, onlyPush: Bool = false) {
         self.init()
+        self.onlyPush = onlyPush
         self.update(photo: resource, options: options)
         self.editorDelegate = delegate
     }
@@ -84,6 +87,7 @@ extension ImageEditorController {
         enableDebugLog = options.enableDebugLog
         let checkedOptions = check(resource: resource, options: options)
         let rootViewController = PhotoEditorController(photo: resource, options: checkedOptions, delegate: self)
+        rootViewController.onlyPush = self.onlyPush
         rootViewController.trackObserver = self
         viewControllers = [rootViewController]
     }

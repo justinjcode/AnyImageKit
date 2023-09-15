@@ -20,6 +20,8 @@ final class PhotoEditorController: AnyImageViewController {
     
     private var didSetupView: Bool = false
     
+    var onlyPush: Bool = false
+    
     private lazy var contentView: PhotoEditorContentView = {
         let view = PhotoEditorContentView(frame: self.view.bounds, image: image, context: context)
         view.canvas.setBrush(color: options.penColors[options.defaultPenIndex].color)
@@ -184,7 +186,7 @@ final class PhotoEditorController: AnyImageViewController {
             self.setupData()
             if let toolOption = self.context.toolOption, toolOption == .mosaic {
                 self.contentView.mosaic?.isUserInteractionEnabled = true
-            }            
+            }
             self.contentView.updateView(with: self.stack.edit) { [weak self] in
                 self?.toolView.mosaicToolView.setMosaicIdx(self?.stack.edit.mosaicData.last?.idx ?? 0)
                 let delay = (self?.stack.edit.mosaicData.isEmpty ?? true) ? 0.0 : 0.25
@@ -328,7 +330,11 @@ extension PhotoEditorController {
         let coverImage = getInputCoverImage()
         let controller = InputTextViewController(context: context, data: data, coverImage: coverImage)
         controller.modalPresentationStyle = .fullScreen
-        present(controller, animated: true, completion: nil)
+        if self.onlyPush {
+            self.navigationController?.pushViewController(controller, animated: true)
+        } else {
+            present(controller, animated: true, completion: nil)
+        }
     }
     
     /// 获取输入界面的占位图
@@ -448,11 +454,17 @@ extension PhotoEditorController {
         case .textCancel:
             didEndInputing()
             contentView.restoreHiddenTextView()
+            if self.onlyPush {
+                self.navigationController?.popViewController(animated: true)
+            }
         case .textDone(let data):
             didEndInputing()
             contentView.removeHiddenTextView()
             if !data.text.isEmpty {
                 stack.addTextData(data)
+            }
+            if self.onlyPush {
+                self.navigationController?.popViewController(animated: true)
             }
         case .share:
             delegate?.photoEditor(self, share: image, isEdited: stack.edit.isEdited)
