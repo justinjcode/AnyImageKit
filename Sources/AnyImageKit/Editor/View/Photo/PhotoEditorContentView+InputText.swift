@@ -172,8 +172,10 @@ extension PhotoEditorContentView {
         var y: CGFloat
         if !cropContext.didCropOrRotate {
             if scrollView.zoomScale == scrollView.minimumZoomScale {
-                x = (imageView.bounds.width - size.width) / 2
-                y = (imageView.bounds.height - size.height) / 2
+                let contentWidth = min(UIScreen.main.bounds.width, imageView.bounds.width)
+                let contentHeight = min(UIScreen.main.bounds.height, imageView.bounds.height)
+                x = scrollView.contentOffset.x + (contentWidth - size.width)/2.0
+                y = scrollView.contentOffset.y + (contentHeight - size.height)/2.0
             } else {
                 let width = UIScreen.main.bounds.width * imageView.bounds.width / imageView.frame.width
                 x = abs(scrollView.contentOffset.x) / scale
