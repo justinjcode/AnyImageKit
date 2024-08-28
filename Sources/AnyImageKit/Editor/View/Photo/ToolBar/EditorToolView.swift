@@ -17,8 +17,9 @@ final class EditorToolView: UIView {
     private(set) lazy var topCoverView: GradientView = {
         let view = GradientView(frame: .zero)
         view.layer.colors = [
-            UIColor.black.withAlphaComponent(0.12).cgColor,
-            UIColor.black.withAlphaComponent(0.12).cgColor,
+            UIColor.black.withAlphaComponent(0.24).cgColor,
+            UIColor.black.withAlphaComponent(0.17).cgColor,
+            UIColor.black.withAlphaComponent(0.10).cgColor,
             UIColor.black.withAlphaComponent(0).cgColor,
         ]
         view.layer.locations = [0, 0.5, 1]
@@ -29,7 +30,9 @@ final class EditorToolView: UIView {
     private(set) lazy var bottomCoverView: GradientView = {
         let view = GradientView(frame: .zero)
         view.layer.colors = [
-            UIColor.black.withAlphaComponent(0.25).cgColor,
+            UIColor.black.withAlphaComponent(0.24).cgColor,
+            UIColor.black.withAlphaComponent(0.17).cgColor,
+            UIColor.black.withAlphaComponent(0.10).cgColor,
             UIColor.black.withAlphaComponent(0).cgColor,
         ]
         view.layer.locations = [0, 1]

@@ -21,7 +21,7 @@ extension PhotoEditorContentView {
     }
     /// 取图片适屏size
     var fitSize: CGSize {
-        guard let image = imageView.image else { return CGSize.zero }
+        guard let image = imageView.image, image.size.width > 0, image.size.height > 0 else { return CGSize.zero }
         let width = scrollView.bounds.width
         if cropContext.rotateState.isPortrait {
             let scale = image.size.height / image.size.width
@@ -93,7 +93,7 @@ extension PhotoEditorContentView {
     }
     /// 裁剪的图片size
     var cropSize: CGSize {
-        guard let image = imageView.image else { return CGSize.zero }
+        guard let image = imageView.image, image.size.width > 0, image.size.height > 0 else { return CGSize.zero }
         let maxSize = cropMaxSize
         let scale: CGFloat
         if cropContext.rotateState.isPortrait {

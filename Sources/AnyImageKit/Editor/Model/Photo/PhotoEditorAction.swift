@@ -37,6 +37,9 @@ enum PhotoEditorAction {
     case textDidFinishMove(data: TextData, delete: Bool)
     case textCancel
     case textDone(TextData)
+    
+    case share
+    case download
 }
 
 extension PhotoEditorAction {

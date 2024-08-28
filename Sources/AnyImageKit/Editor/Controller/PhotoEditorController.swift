@@ -12,9 +12,15 @@ protocol PhotoEditorControllerDelegate: AnyObject {
     
     func photoEditorDidCancel(_ editor: PhotoEditorController)
     func photoEditor(_ editor: PhotoEditorController, didFinishEditing photo: UIImage, isEdited: Bool)
+    func photoEditor(_ editor: PhotoEditorController, share photo: UIImage, isEdited: Bool)
+    func photoEditor(_ editor: PhotoEditorController, save photo: UIImage, isEdited: Bool)
 }
 
 final class PhotoEditorController: AnyImageViewController {
+    
+    private var didSetupView: Bool = false
+    
+    var onlyPush: Bool = false
     
     private lazy var contentView: PhotoEditorContentView = {
         let view = PhotoEditorContentView(frame: self.view.bounds, image: image, context: context)
@@ -42,13 +48,32 @@ final class PhotoEditorController: AnyImageViewController {
         view.accessibilityLabel = options.theme[string: .back]
         return view
     }()
-    
+
     private var isReady: Bool = false
     private var image: UIImage = UIImage() {
         didSet {
             isReady = true
         }
     }
+
+    private(set) lazy var shareButton: UIButton = {
+        let view = UIButton(type: .custom)
+        view.backgroundColor = .clear
+        view.setImage(BundleHelper.image(named: "Share", module: .editor), for: .normal)
+        view.contentEdgeInsets = UIEdgeInsets(top: 5, left: 5, bottom: 5, right: 5)
+        view.addTarget(self, action: #selector(shareButtonTapped), for: .touchUpInside)
+        return view
+    }()
+    
+    private(set) lazy var downloadButton: UIButton = {
+        let view = UIButton(type: .custom)
+        view.backgroundColor = .clear
+        view.setImage(BundleHelper.image(named: "Download", module: .editor), for: .normal)
+        view.contentEdgeInsets = UIEdgeInsets(top: 5, left: 5, bottom: 5, right: 5)
+        view.addTarget(self, action: #selector(downloadButtonTapped), for: .touchUpInside)
+        return view
+    }()
+
     private let resource: EditorPhotoResource
     private let options: EditorPhotoOptionsInfo
     private let context: PhotoEditorContext
@@ -113,7 +138,9 @@ final class PhotoEditorController: AnyImageViewController {
         view.addSubview(contentView)
         view.addSubview(toolView)
         view.addSubview(backButton)
-        view.addSubview(placeholderImageView)
+        view.addSubview(shareButton)
+        view.addSubview(downloadButton)
+        view.addSubview(placeholdImageView)
         
         contentView.snp.makeConstraints { (maker) in
             maker.edges.equalToSuperview()
@@ -131,15 +158,35 @@ final class PhotoEditorController: AnyImageViewController {
             maker.left.equalToSuperview().offset(10)
             maker.width.height.equalTo(50)
         }
-        placeholderImageView.snp.makeConstraints { maker in
+        downloadButton.snp.makeConstraints { maker in
+            if #available(iOS 11.0, *) {
+                let topOffset = ScreenHelper.statusBarFrame.height <= 20 ? 20 : 10
+                maker.top.equalTo(view.safeAreaLayoutGuide).offset(topOffset)
+            } else {
+                maker.top.equalToSuperview().offset(30)
+            }
+            maker.right.equalToSuperview().inset(10)
+            maker.width.height.equalTo(50)
+        }
+        shareButton.snp.makeConstraints { maker in
+            if #available(iOS 11.0, *) {
+                let topOffset = ScreenHelper.statusBarFrame.height <= 20 ? 20 : 10
+                maker.top.equalTo(view.safeAreaLayoutGuide).offset(topOffset)
+            } else {
+                maker.top.equalToSuperview().offset(30)
+            }
+            maker.right.equalTo(self.downloadButton.snp.left).offset(-16)
+            maker.width.height.equalTo(50)
+        }
+        placeholdImageView.snp.makeConstraints { maker in
             maker.edges.equalToSuperview()
         }
         
         if let data = stack.edit.outputImageData, let image = UIImage(data: data) {
             setPlaceholderImage(image)
         }
-        
         options.theme.buttonConfiguration[.back]?.configuration(backButton)
+        didSetupView = true
     }
     
     private func setupMosaicView() {
@@ -148,7 +195,7 @@ final class PhotoEditorController: AnyImageViewController {
             self.setupData()
             if let toolOption = self.context.toolOption, toolOption == .mosaic {
                 self.contentView.mosaic?.isUserInteractionEnabled = true
-            }            
+            }
             self.contentView.updateView(with: self.stack.edit) { [weak self] in
                 self?.toolView.mosaicToolView.setMosaicIdx(self?.stack.edit.mosaicData.last?.idx ?? 0)
                 let delay = (self?.stack.edit.mosaicData.isEmpty ?? true) ? 0.0 : 0.25
@@ -194,6 +241,14 @@ extension PhotoEditorController {
     @objc private func backButtonTapped(_ sender: UIButton) {
         context.action(.back)
     }
+    
+    @objc private func shareButtonTapped() {
+        context.action(.share)
+    }
+    
+    @objc private func downloadButtonTapped() {
+        context.action(.download)
+    }
 }
 
 // MARK: - Private
@@ -225,11 +280,15 @@ extension PhotoEditorController {
     }
     
     private func showHUDIfNeeded() {
-        if !isReady || contentView.mosaic == nil {
-            view.hud.show()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                if self.isReady &&  self.contentView.mosaic != nil {
-                    self.view.hud.hide()
+
+        guard didSetupView else {
+            return
+        }
+        if contentView.mosaic == nil {
+            showWaitHUD()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                if self?.contentView.mosaic != nil {
+                    self?.hideHUD()
                 }
             }
         }
@@ -239,6 +298,8 @@ extension PhotoEditorController {
         UIView.animate(withDuration: animated ? 0.25 : 0) {
             self.toolView.alpha = hidden ? 0 : 1
             self.backButton.alpha = hidden ? 0 : 1
+            self.shareButton.alpha = hidden ? 0 : 1
+            self.downloadButton.alpha = hidden ? 0 : 1
         }
     }
 }
@@ -249,6 +310,8 @@ extension PhotoEditorController {
     /// 准备开始裁剪
     private func willBeginCrop() {
         backButton.isHidden = true
+        shareButton.isHidden = true
+        downloadButton.isHidden = true
         contentView.scrollView.isScrollEnabled = true
         contentView.cropLayerLeave.isHidden = true
         contentView.deactivateAllTextView()
@@ -286,7 +349,11 @@ extension PhotoEditorController {
         let coverImage = getInputCoverImage()
         let controller = InputTextViewController(context: context, data: textData, coverImage: coverImage)
         controller.modalPresentationStyle = .fullScreen
-        present(controller, animated: true, completion: nil)
+        if self.onlyPush {
+            self.navigationController?.pushViewController(controller, animated: true)
+        } else {
+            present(controller, animated: true, completion: nil)
+        }
     }
     
     /// 获取输入界面的占位图
@@ -297,6 +364,8 @@ extension PhotoEditorController {
     /// 准备开始输入文本
     private func willBeginInput() {
         backButton.isHidden = true
+        shareButton.isHidden = true
+        downloadButton.isHidden = true
         toolView.topCoverView.isHidden = true
         toolView.bottomCoverView.isHidden = true
         toolView.doneButton.isHidden = true
@@ -307,6 +376,8 @@ extension PhotoEditorController {
     /// 已经结束输入文本
     private func didEndInputting() {
         backButton.isHidden = false
+        shareButton.isHidden = false
+        downloadButton.isHidden = false
         toolView.topCoverView.isHidden = false
         toolView.bottomCoverView.isHidden = false
         toolView.doneButton.isHidden = false
@@ -385,12 +456,16 @@ extension PhotoEditorController {
                 return true
             }
             backButton.isHidden = false
+            shareButton.isHidden = false
+            downloadButton.isHidden = false
             contentView.cropCancel { [weak self] (_) in
                 self?.didEndCropping()
             }
         case .cropDone:
             trackObserver?.track(event: .editorPhotoCropDone, userInfo: [:])
             backButton.isHidden = false
+            shareButton.isHidden = false
+            downloadButton.isHidden = false
             contentView.cropDone { [weak self] (_) in
                 guard let self = self else { return }
                 self.didEndCropping()
@@ -415,12 +490,22 @@ extension PhotoEditorController {
         case .textCancel:
             didEndInputting()
             contentView.restoreHiddenTextView()
+            if self.onlyPush {
+                self.navigationController?.popViewController(animated: true)
+            }
         case .textDone(let data):
             didEndInputting()
             contentView.removeHiddenTextView()
             if !data.text.isEmpty {
                 stack.addTextData(data)
             }
+            if self.onlyPush {
+                self.navigationController?.popViewController(animated: true)
+            }
+        case .share:
+            delegate?.photoEditor(self, share: image, isEdited: stack.edit.isEdited)
+        case .download:
+            delegate?.photoEditor(self, save: image, isEdited: stack.edit.isEdited)
         }
         return true
     }

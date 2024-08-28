@@ -162,7 +162,8 @@ extension PhotoEditingStack {
     
     private func prepareOutput() {
         drawer = []
-        guard let sourceImage = CIImage(image: originImage) else { return }
+        let orientation = originImage.imageOrientation
+        guard let sourceImage = CIImage(image: originImage)?.oriented(.init(orientation)) else { return }
         let imageSize = sourceImage.extent.size
         let size = originImageViewBounds.size
         let scale = imageSize.width / size.width
