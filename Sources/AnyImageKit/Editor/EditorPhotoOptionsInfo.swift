@@ -129,6 +129,9 @@ public struct EditorPhotoOptionsInfo {
     /// - Default: false
     public var enableDebugLog: Bool = false
     
+    public var needDownload: Bool = false
+    public var needShare: Bool = false
+    
     public init() { }
 }
 

@@ -62,6 +62,7 @@ final class PhotoEditorController: AnyImageViewController {
         view.setImage(BundleHelper.image(named: "Share", module: .editor), for: .normal)
         view.contentEdgeInsets = UIEdgeInsets(top: 5, left: 5, bottom: 5, right: 5)
         view.addTarget(self, action: #selector(shareButtonTapped), for: .touchUpInside)
+        view.isHidden = !options.needShare
         return view
     }()
     
@@ -71,6 +72,7 @@ final class PhotoEditorController: AnyImageViewController {
         view.setImage(BundleHelper.image(named: "Download", module: .editor), for: .normal)
         view.contentEdgeInsets = UIEdgeInsets(top: 5, left: 5, bottom: 5, right: 5)
         view.addTarget(self, action: #selector(downloadButtonTapped), for: .touchUpInside)
+        view.isHidden = !options.needDownload
         return view
     }()
 
@@ -140,7 +142,7 @@ final class PhotoEditorController: AnyImageViewController {
         view.addSubview(backButton)
         view.addSubview(shareButton)
         view.addSubview(downloadButton)
-        view.addSubview(placeholdImageView)
+        view.addSubview(placeholderImageView)
         
         contentView.snp.makeConstraints { (maker) in
             maker.edges.equalToSuperview()
@@ -178,7 +180,7 @@ final class PhotoEditorController: AnyImageViewController {
             maker.right.equalTo(self.downloadButton.snp.left).offset(-16)
             maker.width.height.equalTo(50)
         }
-        placeholdImageView.snp.makeConstraints { maker in
+        placeholderImageView.snp.makeConstraints { maker in
             maker.edges.equalToSuperview()
         }
         
@@ -198,7 +200,7 @@ final class PhotoEditorController: AnyImageViewController {
             }
             self.contentView.updateView(with: self.stack.edit) { [weak self] in
                 self?.toolView.mosaicToolView.setMosaicIdx(self?.stack.edit.mosaicData.last?.idx ?? 0)
-                let delay = (self?.stack.edit.mosaicData.isEmpty ?? true) ? 0.0 : 0.25
+                let delay = (self?.stack.edit.mosaicData.isEmpty ?? true) ? 0.0 : 0.1
                 DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in // 这里稍微延迟一下，给马赛克图层创建留点时间
                     self?.contentView.isHidden = false
                     self?.placeholderImageView.isHidden = true
@@ -284,14 +286,9 @@ extension PhotoEditorController {
         guard didSetupView else {
             return
         }
-        if contentView.mosaic == nil {
-            showWaitHUD()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                if self?.contentView.mosaic != nil {
-                    self?.hideHUD()
-                }
-            }
-        }
+//        if contentView.mosaic == nil {
+//            view.hud.show()
+//        }
     }
     
     private func setTool(hidden: Bool, animated: Bool = true) {
@@ -376,8 +373,8 @@ extension PhotoEditorController {
     /// 已经结束输入文本
     private func didEndInputting() {
         backButton.isHidden = false
-        shareButton.isHidden = false
-        downloadButton.isHidden = false
+        shareButton.isHidden = !options.needShare
+        downloadButton.isHidden = !options.needDownload
         toolView.topCoverView.isHidden = false
         toolView.bottomCoverView.isHidden = false
         toolView.doneButton.isHidden = false
@@ -456,16 +453,16 @@ extension PhotoEditorController {
                 return true
             }
             backButton.isHidden = false
-            shareButton.isHidden = false
-            downloadButton.isHidden = false
+            shareButton.isHidden = !options.needShare
+            downloadButton.isHidden = !options.needDownload
             contentView.cropCancel { [weak self] (_) in
                 self?.didEndCropping()
             }
         case .cropDone:
             trackObserver?.track(event: .editorPhotoCropDone, userInfo: [:])
             backButton.isHidden = false
-            shareButton.isHidden = false
-            downloadButton.isHidden = false
+            shareButton.isHidden = !options.needShare
+            downloadButton.isHidden = !options.needDownload
             contentView.cropDone { [weak self] (_) in
                 guard let self = self else { return }
                 self.didEndCropping()
@@ -532,9 +529,9 @@ extension PhotoEditorController {
             }
             trackObserver?.track(event: .editorPhotoCrop, userInfo: [:])
         case .mosaic:
-            if contentView.mosaic == nil {
-                view.hud.show()
-            }
+//            if contentView.mosaic == nil {
+//                view.hud.show()
+//            }
             contentView.mosaic?.isUserInteractionEnabled = true
             trackObserver?.track(event: .editorPhotoMosaic, userInfo: [:])
         }

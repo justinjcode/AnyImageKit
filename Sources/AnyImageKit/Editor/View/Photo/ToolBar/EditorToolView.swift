@@ -17,12 +17,12 @@ final class EditorToolView: UIView {
     private(set) lazy var topCoverView: GradientView = {
         let view = GradientView(frame: .zero)
         view.layer.colors = [
-            UIColor.black.withAlphaComponent(0.24).cgColor,
-            UIColor.black.withAlphaComponent(0.17).cgColor,
-            UIColor.black.withAlphaComponent(0.10).cgColor,
+            UIColor.black.withAlphaComponent(0.44).cgColor,
+            UIColor.black.withAlphaComponent(0.37).cgColor,
+            UIColor.black.withAlphaComponent(0.15).cgColor,
             UIColor.black.withAlphaComponent(0).cgColor,
         ]
-        view.layer.locations = [0, 0.5, 1]
+//        view.layer.locations = [0, 0.5, 1]
         view.layer.startPoint = CGPoint(x: 0.5, y: 0)
         view.layer.endPoint = CGPoint(x: 0.5, y: 1)
         return view
@@ -30,12 +30,12 @@ final class EditorToolView: UIView {
     private(set) lazy var bottomCoverView: GradientView = {
         let view = GradientView(frame: .zero)
         view.layer.colors = [
-            UIColor.black.withAlphaComponent(0.24).cgColor,
-            UIColor.black.withAlphaComponent(0.17).cgColor,
-            UIColor.black.withAlphaComponent(0.10).cgColor,
+            UIColor.black.withAlphaComponent(0.44).cgColor,
+            UIColor.black.withAlphaComponent(0.37).cgColor,
+            UIColor.black.withAlphaComponent(0.15).cgColor,
             UIColor.black.withAlphaComponent(0).cgColor,
         ]
-        view.layer.locations = [0, 1]
+//        view.layer.locations = [0, 1]
         view.layer.startPoint = CGPoint(x: 0.5, y: 1)
         view.layer.endPoint = CGPoint(x: 0.5, y: 0)
         return view
