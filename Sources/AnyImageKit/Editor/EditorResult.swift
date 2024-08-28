@@ -12,7 +12,9 @@ public struct EditorResult: Equatable {
     
     /// Local media url. Store in temporary directory.
     /// If you want to keep this file, you should move it to your document directory.
-    public let mediaURL: URL
+    public let mediaURL: URL?
+    
+    public let image: UIImage?
     
     /// Media type
     public let type: MediaType
@@ -23,10 +25,11 @@ public struct EditorResult: Equatable {
     /// Media is edited or not
     public let isEdited: Bool
     
-    init(mediaURL: URL, type: MediaType, videoEditingInfo: EditorResultVideoInfo?, isEdited: Bool) {
+    init(mediaURL: URL?, image: UIImage? = nil, type: MediaType, videoEditingInfo: EditorResultVideoInfo?, isEdited: Bool) {
         self.mediaURL = mediaURL
         self.type = type
         self.videoEditingInfo = videoEditingInfo
         self.isEdited = isEdited
+        self.image = image
     }
 }

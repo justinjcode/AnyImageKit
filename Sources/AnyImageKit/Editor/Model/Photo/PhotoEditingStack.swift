@@ -211,7 +211,7 @@ extension PhotoEditingStack {
         }
     }
     
-    func output() -> UIImage? {
+    func outputold() -> UIImage? {
         prepareOutput()
         guard let cgImage = getCGImage(originImage), let ciImage = CIImage(image: originImage) else { return nil }
         let canvasSize = ciImage.extent.size
@@ -231,8 +231,52 @@ extension PhotoEditingStack {
                 $0.draw(in: context, size: canvasSize)
             }
         }
-        return rotateImage(cropImage(image))
+//        return rotateImage(cropImage(image))
+        return cropImage(image)
     }
+    
+    func output() -> UIImage? {
+        prepareOutput()
+        guard let cgImage = getCGImage(originImage), let ciImage = CIImage(image: originImage) else { return nil }
+        let canvasSize = ciImage.extent.size
+
+        // 设置分片的宽度和高度
+        let tileWidth: CGFloat = 1024 // 每个片段的宽度
+        let tileHeight: CGFloat = 1024 // 每个片段的高度
+
+        // 计算总的列数和行数
+        let cols = Int(ceil(canvasSize.width / tileWidth))
+        let rows = Int(ceil(canvasSize.height / tileHeight))
+
+        let image = UIGraphicsImageRenderer(size: canvasSize, format: getImageRendererFormat()).image { rendererContext in
+            let context = rendererContext.cgContext
+            
+            for row in 0..<rows {
+                for col in 0..<cols {
+                    // 计算当前分片的大小和位置
+                    let tileX = CGFloat(col) * tileWidth
+                    let tileY = CGFloat(row) * tileHeight
+                    let tileRect = CGRect(x: tileX, y: tileY, width: min(tileWidth, canvasSize.width - tileX), height: min(tileHeight, canvasSize.height - tileY))
+                    
+                    // 绘制原图的当前分片
+                    context.saveGState()
+                    context.translateBy(x: 0, y: canvasSize.height)
+                    context.scaleBy(x: 1, y: -1)
+                    context.clip(to: tileRect)
+                    context.draw(cgImage, in: CGRect(origin: .zero, size: canvasSize))
+                    context.restoreGState()
+                }
+            }
+            
+            //绘制马赛克 & 画笔 & 文本
+            self.drawer.forEach {
+                $0.draw(in: context, size: canvasSize)
+            }
+        }
+        return cropImage(image)
+        
+    }
+    
 }
 
 // MARK: - Helper

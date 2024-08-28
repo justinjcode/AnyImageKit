@@ -222,14 +222,16 @@ extension ImageEditorController: PhotoEditorControllerDelegate {
     }
     
     func photoEditor(_ editor: PhotoEditorController, didFinishEditing photo: UIImage, isEdited: Bool) {
-        let outputResult = output(photo: photo, fileType: .jpeg)
-        switch outputResult {
-        case .success(let url):
-            let result = EditorResult(mediaURL: url, type: .photo, videoEditingInfo: nil, isEdited: isEdited)
-            editorDelegate?.imageEditor(self, didFinishEditing: result)
-        case .failure(let error):
-            _print(error.localizedDescription)
-        }
+//        let outputResult = output(photo: photo, fileType: .jpeg)
+//        switch outputResult {
+//        case .success(let url):
+//            let result = EditorResult(mediaURL: url, type: .photo, videoEditingInfo: nil, isEdited: isEdited)
+//            editorDelegate?.imageEditor(self, didFinishEditing: result)
+//        case .failure(let error):
+//            _print(error.localizedDescription)
+//        }
+        let result = EditorResult(mediaURL: nil, image: photo, type: .photo, videoEditingInfo: nil, isEdited: isEdited)
+        editorDelegate?.imageEditor(self, didFinishEditing: result)
     }
     
     func photoEditor(_ editor: PhotoEditorController, share photo: UIImage, isEdited: Bool) {
