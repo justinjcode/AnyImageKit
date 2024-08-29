@@ -14,6 +14,7 @@ protocol PhotoEditorControllerDelegate: AnyObject {
     func photoEditor(_ editor: PhotoEditorController, didFinishEditing photo: UIImage, isEdited: Bool)
     func photoEditor(_ editor: PhotoEditorController, share photo: UIImage, isEdited: Bool)
     func photoEditor(_ editor: PhotoEditorController, save photo: UIImage, isEdited: Bool)
+    func showLoading(_ editor: PhotoEditorController, show: Bool)
 }
 
 final class PhotoEditorController: AnyImageViewController {
@@ -202,9 +203,10 @@ final class PhotoEditorController: AnyImageViewController {
                 self?.toolView.mosaicToolView.setMosaicIdx(self?.stack.edit.mosaicData.last?.idx ?? 0)
                 let delay = (self?.stack.edit.mosaicData.isEmpty ?? true) ? 0.0 : 0.1
                 DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in // 这里稍微延迟一下，给马赛克图层创建留点时间
-                    self?.contentView.isHidden = false
-                    self?.placeholderImageView.isHidden = true
-                    self?.view.hud.hide()
+                    guard let `self` = self else {return}
+                    self.contentView.isHidden = false
+                    self.placeholderImageView.isHidden = true
+                    delegate?.showLoading(self, show: false)
                 }
             }
         }
@@ -286,9 +288,9 @@ extension PhotoEditorController {
         guard didSetupView else {
             return
         }
-//        if contentView.mosaic == nil {
-//            view.hud.show()
-//        }
+        if contentView.mosaic == nil {
+            delegate?.showLoading(self, show: true)
+        }
     }
     
     private func setTool(hidden: Bool, animated: Bool = true) {
@@ -410,13 +412,22 @@ extension PhotoEditorController {
             delegate?.photoEditorDidCancel(self)
             trackObserver?.track(event: .editorBack, userInfo: [.page: AnyImagePage.editorPhoto])
         case .done:
+            print("\(self) \(#function) click done")
             contentView.deactivateAllTextView()
-            guard let image = getResultImage() else { return false }
-            setPlaceholderImage(image)
-            stack.setOutputImage(image)
-            saveEditPath()
-            delegate?.photoEditor(self, didFinishEditing: image, isEdited: stack.edit.isEdited)
-            trackObserver?.track(event: .editorDone, userInfo: [.page: AnyImagePage.editorPhoto])
+            delegate?.showLoading(self, show: true)
+            DispatchQueue.main.async {[weak self] in
+                guard let `self` = self else {return}
+                guard let image = getResultImage() else {
+                    delegate?.showLoading(self, show: false)
+                    return
+                }
+                setPlaceholderImage(image)
+                stack.setOutputImage(image)
+                saveEditPath()
+                delegate?.showLoading(self, show: false)
+                delegate?.photoEditor(self, didFinishEditing: image, isEdited: stack.edit.isEdited)
+                trackObserver?.track(event: .editorDone, userInfo: [.page: AnyImagePage.editorPhoto])
+            }
         case .toolOptionChanged(let option):
             context.toolOption = option
             toolOptionsDidChanged(option: option)
@@ -529,9 +540,9 @@ extension PhotoEditorController {
             }
             trackObserver?.track(event: .editorPhotoCrop, userInfo: [:])
         case .mosaic:
-//            if contentView.mosaic == nil {
-//                view.hud.show()
-//            }
+            if contentView.mosaic == nil {
+                delegate?.showLoading(self, show: true)
+            }
             contentView.mosaic?.isUserInteractionEnabled = true
             trackObserver?.track(event: .editorPhotoMosaic, userInfo: [:])
         }

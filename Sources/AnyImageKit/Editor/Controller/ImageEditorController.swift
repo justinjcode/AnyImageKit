@@ -15,6 +15,7 @@ public protocol ImageEditorControllerDelegate: AnyObject {
     func imageEditor(_ editor: ImageEditorController, didFinishEditing result: EditorResult)
     func imageEditor(_ editor: ImageEditorController, share image: UIImage)
     func imageEditor(_ editor: ImageEditorController, save image: UIImage)
+    func showLoading(_ editor: ImageEditorController, show: Bool)
 }
 
 extension ImageEditorControllerDelegate {
@@ -241,6 +242,11 @@ extension ImageEditorController: PhotoEditorControllerDelegate {
     func photoEditor(_ editor: PhotoEditorController, save photo: UIImage, isEdited: Bool) {
         editorDelegate?.imageEditor(self, save: photo)
     }
+    
+    func showLoading(_ editor: PhotoEditorController, show: Bool) {
+        editorDelegate?.showLoading(self, show: show)
+    }
+    
 }
 
 // MARK: - VideoEditorControllerDelegate
