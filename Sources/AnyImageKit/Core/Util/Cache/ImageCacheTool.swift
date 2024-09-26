@@ -55,13 +55,12 @@ extension ImageCacheTool {
     /// 读取缓存
     /// - Parameters:
     ///   - key: 标识符
-    func retrieveImage(forKey key: String) -> UIImage? {
+    func retrieveImage(forKey key: String, completion:@escaping (UIImage?)->()) {
         if let image = cache.retrieveImageInMemoryCache(forKey: key) {
-            return image
+            completion(image)
         } else if useDiskCache {
-            return retrieveImageInDisk(forKey: key)
+            retrieveImageInDisk(forKey: key, completion: completion)
         }
-        return nil
     }
 }
 
@@ -79,19 +78,15 @@ extension ImageCacheTool {
     
     /// 从磁盘读取图片
     /// - Parameter key: 标识符
-    private func retrieveImageInDisk(forKey key: String) -> UIImage? {
-        var image: UIImage? = nil
-        let semaphore = DispatchSemaphore(value: 0)
+    private func retrieveImageInDisk(forKey key: String, completion: @escaping (UIImage?)->()) {
         cache.retrieveImage(forKey: key) { (result) in
             switch result {
             case .success(let res):
-                image = res.image
+                completion(res.image)
             case .failure(let error):
                 _print(error)
+                completion(nil)
             }
-            semaphore.signal()
         }
-        semaphore.wait()
-        return image
     }
 }
